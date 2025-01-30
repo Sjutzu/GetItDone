@@ -168,10 +168,10 @@ fun EditTaskScreen(navController: NavController, viewModel: ToDoViewModel, taskI
 
                 Button(
                     onClick = {
-                        viewModel.deleteTask(taskToEdit) // Usuń zadanie
+                        viewModel.deleteTask(taskToEdit)
                         navController.navigate(Screen.TaskList.route) {
-                            popUpTo(Screen.TaskList.route) { // Wyczyść stos nawigacji do TaskList
-                                inclusive = true // Usuń również TaskList ze stosu (opcjonalnie)
+                            popUpTo(Screen.TaskList.route) {
+                                inclusive = true
                             }
                         }
                     },

@@ -19,7 +19,6 @@ import com.example.getitdone.viewmodel.ToDoViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import java.util.Calendar
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.ui.text.font.FontWeight
@@ -33,34 +32,8 @@ fun TaskListScreen(navController: NavController, viewModel: ToDoViewModel) {
     val selectedFilters = remember { mutableStateListOf<String>() }
     var selectedSortOption by remember { mutableStateOf("Tytuł") }
 
-    val filteredTasks = tasks.filter { task ->
-        val matchesPriority = selectedFilters.isEmpty() || selectedFilters.any { filter ->
-            when (filter) {
-                "Priorytet 1" -> task.priority == 1
-                "Priorytet 2" -> task.priority == 2
-                "Priorytet 3" -> task.priority == 3
-                else -> false
-            }
-        }
-        val matchesDate = selectedFilters.isEmpty() || selectedFilters.any { filter ->
-            val daysLeft = daysUntil(task.date)
-            when (filter) {
-                "Mniej niż 3 dni" -> daysLeft < 3
-                "Mniej niż tydzień" -> daysLeft < 7
-                "Mniej niż miesiąc" -> daysLeft < 30
-                "Zaległe" -> daysLeft < 0
-                else -> false
-            }
-        }
-        matchesPriority || matchesDate
-    }
-
-    val sortedTasks = when (selectedSortOption) {
-        "Tytuł" -> filteredTasks.sortedBy { it.title }
-        "Data" -> filteredTasks.sortedBy { it.date }
-        "Priorytet" -> filteredTasks.sortedBy { it.priority }
-        else -> filteredTasks
-    }
+    val filteredTasks = viewModel.filterTasks(tasks, selectedFilters)
+    val sortedTasks = viewModel.sortTasks(filteredTasks, selectedSortOption)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -70,7 +43,6 @@ fun TaskListScreen(navController: NavController, viewModel: ToDoViewModel) {
                 modifier = Modifier.fillMaxWidth().padding(top = 62.dp, start = 16.dp, end = 26.dp),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
-
             )
 
             IconButton(
@@ -96,7 +68,7 @@ fun TaskListScreen(navController: NavController, viewModel: ToDoViewModel) {
                     Column {
                         listOf(
                             "Priorytet 1", "Priorytet 2", "Priorytet 3",
-                            "Mniej niż 3 dni", "Mniej niż tydzień", "Mniej niż miesiąc","Zaległe"
+                            "Mniej niż 3 dni", "Mniej niż tydzień", "Mniej niż miesiąc", "Zaległe"
                         ).forEach { option ->
                             Row(
                                 modifier = Modifier
@@ -190,7 +162,9 @@ fun TaskListScreen(navController: NavController, viewModel: ToDoViewModel) {
                     }
 
                     if (task.date != "undefined") {
-                        Text(text = "Dni do końca: ${daysUntil(task.date)}", fontSize = 14.sp)
+                        val daysLeft = viewModel.daysUntil(task.date)
+                        val daysText = if (daysLeft < 0) "Zaległe" else "$daysLeft dni"
+                        Text(text = "Dni do końca: $daysText", fontSize = 14.sp)
                     }
                 }
             }
@@ -210,21 +184,5 @@ fun TaskListScreen(navController: NavController, viewModel: ToDoViewModel) {
                 modifier = Modifier.padding(8.dp)
             )
         }
-    }
-}
-
-fun daysUntil(dateString: String): Int {
-    if (dateString.isBlank() || dateString == "undefined") {
-        return Int.MAX_VALUE
-    }
-
-    val dateFormat = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-    return try {
-        val taskDate = dateFormat.parse(dateString) ?: return Int.MAX_VALUE
-        val today = Calendar.getInstance().time
-        val diff = taskDate.time - today.time
-        (diff / (1000 * 60 * 60 * 24)).toInt()
-    } catch (e: java.text.ParseException) {
-        Int.MAX_VALUE
     }
 }
